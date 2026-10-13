@@ -177,8 +177,8 @@ export default function Itinerary() {
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 2, marginTop: 4 }}>
                 {i.latitude != null ? <IconButton name="directions" label="Directions" color={colors.primary} onPress={() => openDirections(i.latitude, i.longitude)} /> : null}
-                <IconButton name="arrow-upward" label="Move up" color={idx === 0 ? colors.border : colors.muted} onPress={() => move(i, -1)} />
-                <IconButton name="arrow-downward" label="Move down" color={idx === dayItems.length - 1 ? colors.border : colors.muted} onPress={() => move(i, 1)} />
+                <IconButton name="arrow-upward" label="Move up" color={colors.muted} disabled={idx === 0} onPress={() => move(i, -1)} />
+                <IconButton name="arrow-downward" label="Move down" color={colors.muted} disabled={idx === dayItems.length - 1} onPress={() => move(i, 1)} />
                 <IconButton name="edit" label="Edit activity" color={colors.muted} onPress={() => openForm(i)} />
                 <IconButton name="delete-outline" label="Remove activity" color={colors.error} onPress={() => remove(i)} />
               </View>

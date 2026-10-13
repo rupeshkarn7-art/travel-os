@@ -59,7 +59,7 @@ export default function Register() {
       />
       <Field label="Confirm password" value={v.confirm} onChangeText={set('confirm')} secureTextEntry={!show} autoCapitalize="none" error={errs.confirm} placeholder="Repeat password" />
       <Pressable onPress={() => setTerms(!terms)} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: space.sm }} accessibilityRole="checkbox" accessibilityState={{ checked: terms }}>
-        <Icon name={terms ? 'check-box' : 'check-box-outline-blank'} color={terms ? colors.primary : colors.faint} />
+        <Icon name={terms ? 'check-box' : 'check-box-outline-blank'} color={terms ? colors.primary : colors.muted} />
         <Text style={[type.small, { color: colors.text, flex: 1 }]}>
           I agree to the <Link href="/legal/terms" style={{ color: colors.primary, fontWeight: '600' }}>Terms</Link> & <Link href="/legal/privacy" style={{ color: colors.primary, fontWeight: '600' }}>Privacy Policy</Link>
         </Text>

@@ -136,11 +136,12 @@ export function Button({
   );
 }
 
-export function IconButton({ name, onPress, label, color = colors.text, bg }: { name: IconName; onPress?: () => void; label: string; color?: string; bg?: string }) {
+export function IconButton({ name, onPress, label, color = colors.text, bg, disabled }: { name: IconName; onPress?: () => void; label: string; color?: string; bg?: string; disabled?: boolean }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8}
-      style={[styles.iconBtn, bg ? { backgroundColor: bg } : null]}>
-      <Icon name={name} size={22} color={color} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled} onPress={onPress} hitSlop={8}
+      style={({ pressed }) => [styles.iconBtn, bg ? { backgroundColor: bg } : null, pressed && !disabled && { opacity: 0.6 }]}>
+      <Icon name={name} size={22} color={disabled ? colors.faint : color} />
     </Pressable>
   );
 }
@@ -207,7 +208,7 @@ export function OptionCard({ label, emoji, selected, onPress, sub }: { label: st
         <Text style={[type.title, { color: colors.text }]}>{label}</Text>
         {sub ? <Text style={[type.small, { color: colors.muted }]}>{sub}</Text> : null}
       </View>
-      {selected ? <Icon name="check-circle" color={colors.primary} /> : <Icon name="radio-button-unchecked" color={colors.faint} />}
+      {selected ? <Icon name="check-circle" color={colors.primary} /> : <Icon name="radio-button-unchecked" color={colors.muted} />}
     </Pressable>
   );
 }

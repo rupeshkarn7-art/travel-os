@@ -72,7 +72,7 @@ export default function Checklist() {
           {shown.map((i) => (
             <Card key={i.id} style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: i.completed }} accessibilityLabel={i.task} onPress={() => toggle(i)} hitSlop={8}>
-                <Icon name={i.completed ? 'check-box' : 'check-box-outline-blank'} color={i.completed ? colors.success : colors.faint} size={28} />
+                <Icon name={i.completed ? 'check-box' : 'check-box-outline-blank'} color={i.completed ? colors.success : colors.muted} size={28} />
               </Pressable>
               <View style={{ flex: 1 }}>
                 <Text style={[type.body, { color: i.completed ? colors.faint : colors.text, textDecorationLine: i.completed ? 'line-through' : 'none' }]}>{i.task}</Text>

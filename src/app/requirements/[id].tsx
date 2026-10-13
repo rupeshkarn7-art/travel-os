@@ -23,7 +23,7 @@ function ReqCard({ r, kind }: { r: RequirementDoc; kind: 'document' | 'permit' }
             <Badge label={r.required ? 'Required' : 'Recommended'} tone={r.required ? 'error' : 'neutral'} />
           </View>
         </View>
-        <Icon name={open ? 'expand-less' : 'expand-more'} color={colors.faint} />
+        <Icon name={open ? 'expand-less' : 'expand-more'} color={colors.muted} />
       </View>
       {open ? (
         <View style={{ marginTop: space.md, gap: 8 }}>

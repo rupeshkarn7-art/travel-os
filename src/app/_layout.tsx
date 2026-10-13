@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { Platform, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
@@ -25,7 +27,10 @@ function Splash() {
 }
 
 function Gate() {
-  const { session, profile, loading, recovery } = useAuth();
+  const { session, profile, loading: authLoading, recovery } = useAuth();
+  // Preload the icon font so icon-only buttons never render blank (notably on the web).
+  const [fontsLoaded, fontError] = useFonts(MaterialIcons.font);
+  const loading = authLoading || (!fontsLoaded && !fontError);
   const segments = useSegments();
   const router = useRouter();
 
