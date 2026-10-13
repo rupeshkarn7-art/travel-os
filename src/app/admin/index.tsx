@@ -24,6 +24,7 @@ export default function AdminHome() {
       <Section title="Manage content">
         <Card style={{ paddingVertical: 4 }}>
           <Row icon="place" label="Destinations" onPress={() => router.push('/admin/destinations')} />
+          <Row icon="fact-check" label="Data quality" value="Coverage, stale permits, missing fields" onPress={() => router.push('/admin/data-quality')} />
           <Row icon="verified" label="Documents & permits" value="Set sources and verification dates" onPress={() => router.push('/admin/requirements')} />
           <Row icon="flag" label="Reports" onPress={() => router.push('/admin/reports')} />
         </Card>

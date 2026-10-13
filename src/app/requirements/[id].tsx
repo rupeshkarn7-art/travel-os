@@ -20,7 +20,8 @@ function ReqCard({ r, kind }: { r: RequirementDoc; kind: 'document' | 'permit' }
         <View style={{ flex: 1 }}>
           <Text style={[type.title, { color: colors.text }]}>{name}</Text>
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
-            <Badge label={r.required ? 'Required' : 'Recommended'} tone={r.required ? 'error' : 'neutral'} />
+            <Badge label={(r.mandatory ?? r.required) ? 'Mandatory' : 'Recommended'} tone={(r.mandatory ?? r.required) ? 'error' : 'neutral'} />
+            {r.state_id && !r.destination_id ? <Badge label="Applies to the whole state/UT" tone="info" /> : null}
           </View>
         </View>
         <Icon name={open ? 'expand-less' : 'expand-more'} color={colors.muted} />
@@ -40,6 +41,7 @@ function ReqCard({ r, kind }: { r: RequirementDoc; kind: 'document' | 'permit' }
               <Text style={[type.small, { color: '#7C4A03', flex: 1 }]}>This is not confirmed as current. Do not rely on it as guaranteed — check the official source before you travel.</Text>
             </View>
           ) : null}
+          {r.reconfirm_note ? <Text style={[type.small, { color: colors.primaryDark }]}>When to reconfirm: {r.reconfirm_note}</Text> : null}
           {r.source_url ? <Button title="Open official source" icon="open-in-new" variant="secondary" small onPress={() => openUrl(r.source_url)} style={{ alignSelf: 'flex-start' }} /> : null}
         </View>
       ) : null}
@@ -50,7 +52,7 @@ function ReqCard({ r, kind }: { r: RequirementDoc; kind: 'document' | 'permit' }
 export default function Requirements() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const d = useDestination(id);
-  const q = useRequirements(id);
+  const q = useRequirements(id, d.data?.state_id);
   return (
     <Screen>
       <Header title="Documents & permits" subtitle={d.data?.name} />

@@ -133,6 +133,19 @@ export default function Itinerary() {
     finally { setGen(false); }
   };
 
+  const regenDay = async () => {
+    if (!(await confirmAction(`Regenerate day ${day}?`, 'Suggested activities on this day are replaced. Activities you added yourself are kept.', 'Regenerate', false))) return;
+    setGen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-itinerary', { body: { trip_id: t.id, day } });
+      if (error || (data as any)?.error) {
+        const msg = String((data as any)?.error ?? error?.message ?? '');
+        toast(/not configured|503/i.test(msg) ? 'AI planner is not enabled yet — use “Replace with standard plan” instead.' : msg || 'AI planner unavailable', 'info');
+      } else { track('itinerary_day_regenerated', { day }); toast(`Day ${day} updated`, 'success'); }
+      await refresh();
+    } catch (e) { toast(errMsg(e), 'error'); } finally { setGen(false); }
+  };
+
   const dayCost = dayItems.reduce((s, i) => s + Number(i.estimated_cost), 0);
   const total = items.reduce((s, i) => s + Number(i.estimated_cost), 0);
 
@@ -154,6 +167,9 @@ export default function Itinerary() {
             <Card style={{ backgroundColor: colors.infoTint, borderColor: colors.infoTint, padding: 12 }}>
               <Text style={[type.small, { color: colors.primaryDark }]}>Suggested plan — {items.some((i) => i.source === 'ai') ? 'includes AI suggestions. ' : ''}Prices and timings are estimates. Always confirm opening hours, prices and permits with official sources.</Text>
             </Card>
+          ) : null}
+          {items.length ? (
+            <Button small variant="ghost" icon="autorenew" title={`Regenerate day ${day} with AI`} onPress={regenDay} style={{ alignSelf: 'flex-end' }} />
           ) : null}
           {dayItems.length === 0 ? <Text style={[type.small, { color: colors.muted, textAlign: 'center', marginVertical: space.lg }]}>Nothing planned for Day {day}. Add an activity below.</Text> : null}
           {dayItems.map((i, idx) => (

@@ -51,14 +51,18 @@ export const useAttraction = (id?: string) =>
     queryFn: async () => check(await supabase.from('attractions').select('*, destinations(id,name,state)').eq('id', id!).maybeSingle()) as (Attraction & { destinations: { id: string; name: string; state: string } }) | null,
   });
 
-export const useRequirements = (destinationId?: string) =>
+/** Documents + permits for a destination, including state/UT-wide rules such as an Inner Line Permit. */
+export const useRequirements = (destinationId?: string, stateId?: string | null) =>
   useQuery({
-    queryKey: ['requirements', destinationId],
+    queryKey: ['requirements', destinationId, stateId ?? null],
     enabled: !!destinationId,
     queryFn: async () => {
+      const permitQ = stateId
+        ? supabase.from('permits').select('*').or(`destination_id.eq.${destinationId},and(state_id.eq.${stateId},destination_id.is.null)`)
+        : supabase.from('permits').select('*').eq('destination_id', destinationId!);
       const [d, p] = await Promise.all([
         supabase.from('documents').select('*').eq('destination_id', destinationId!).order('required', { ascending: false }),
-        supabase.from('permits').select('*').eq('destination_id', destinationId!).order('required', { ascending: false }),
+        permitQ.order('required', { ascending: false }),
       ]);
       return { documents: check(d) as RequirementDoc[], permits: check(p) as RequirementDoc[] };
     },

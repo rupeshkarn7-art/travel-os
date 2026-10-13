@@ -45,6 +45,45 @@ export interface Destination {
   source_url: string | null;
   last_verified: string | null;
   review_date: string | null;
+  // India catalogue (migration 005)
+  state_id?: string | null;
+  district?: string | null;
+  destination_type?: string | null;
+  alt_names?: string[];
+  best_months?: number[];
+  season_notes?: string | null;
+  highlights?: string[];
+  hidden_gems?: string[];
+  food?: string[];
+  traveller_profiles?: string[];
+  accessibility?: string | null;
+  nearest_airport?: string | null;
+  nearest_railway?: string | null;
+  budget_tier?: 'budget' | 'standard' | 'premium' | null;
+  unesco?: boolean;
+  source_org?: string | null;
+  verification_status?: VerificationStatus;
+  completeness?: number;
+  missing_fields?: string[];
+  state_name?: string;
+  region_id?: string;
+  distance_km?: number;
+}
+
+export type VerificationStatus = 'verified' | 'partially_verified' | 'estimated' | 'unverified';
+
+export interface Region { id: string; name: string; sort_order: number; description: string | null }
+export interface StateUT {
+  id: string; slug: string; name: string; kind: 'state' | 'ut'; region_id: string; capital: string | null; description: string | null;
+  latitude: number | null; longitude: number | null; tourism_url: string | null; tourism_url_status: 'verified' | 'unverified'; sort_order: number;
+}
+export interface Circuit {
+  id: string; slug: string; name: string; description: string | null; region_id: string | null; days: number; categories: string[]; best_months: number[];
+  circuit_stops?: { stop_order: number; nights: number; destinations: Pick<Destination, 'id' | 'name' | 'state' | 'categories' | 'hero_image' | 'latitude' | 'longitude' | 'recommended_days'> }[];
+}
+export interface SearchFilters {
+  q?: string; region?: string | null; state?: string | null; category?: string | null; month?: number | null;
+  maxDays?: number | null; tier?: string | null; type?: string | null;
 }
 
 export interface Attraction {
@@ -63,6 +102,17 @@ export interface Attraction {
   image: string | null;
   rating: number | null;
   status: 'draft' | 'published' | 'archived';
+  significance?: string | null;
+  entry_fee_text?: string | null;
+  timings_text?: string | null;
+  closed_days?: number[];
+  dress_code?: string | null;
+  photography?: string | null;
+  booking_url?: string | null;
+  source_url?: string | null;
+  last_verified?: string | null;
+  unesco?: boolean;
+  verification_status?: VerificationStatus;
 }
 
 export interface RequirementDoc {
@@ -81,6 +131,9 @@ export interface RequirementDoc {
   last_verified: string | null;
   review_date: string | null;
   status: ReviewStatus;
+  state_id?: string | null;
+  mandatory?: boolean;
+  reconfirm_note?: string | null;
 }
 
 export interface Hotel {
@@ -111,6 +164,14 @@ export interface Trip {
   notes: string | null;
   hotel_confirmed: boolean;
   transport_planned: boolean;
+  adults?: number | null;
+  children?: number | null;
+  pace?: 'relaxed' | 'moderate' | 'packed' | null;
+  interests?: string[];
+  dietary?: string | null;
+  accessibility_needs?: string | null;
+  accommodation_pref?: string | null;
+  travel_style?: 'budget' | 'standard' | 'premium' | null;
   destinations?: Pick<Destination, 'id' | 'name' | 'state' | 'categories' | 'hero_image' | 'latitude' | 'longitude'>;
 }
 

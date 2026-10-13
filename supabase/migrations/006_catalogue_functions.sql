@@ -292,6 +292,11 @@ begin
     end if;
   end loop;
 
+  -- keep the list in time order (meals were inserted after the visits)
+  update itinerary_items ii set sort_order = x.rn
+  from (select id, row_number() over (partition by day_number order by start_time nulls last, sort_order) rn
+        from itinerary_items where itinerary_id = v_it) x
+  where ii.id = x.id;
   update itineraries set source = 'rule', name = 'Suggested plan' where id = v_it;
   return (select count(*) from itinerary_items where itinerary_id = v_it);
 end $$;

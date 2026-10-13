@@ -40,6 +40,28 @@ export const fmtDateLong = (s: string | null | undefined) => {
   const d = parseDate(s);
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 };
+/** "Oct–Mar" style label from a list of months (1-12), handling wrap-around seasons. */
+export const monthsLabel = (months?: number[] | null) => {
+  if (!months?.length) return null;
+  const set = new Set(months);
+  if (set.size === 12) return 'All year';
+  // find a start month that follows a gap, then walk runs
+  let start = 1;
+  for (let m = 1; m <= 12; m++) { const prev = m === 1 ? 12 : m - 1; if (set.has(m) && !set.has(prev)) { start = m; break; } }
+  const runs: string[] = [];
+  let m = start, seen = 0;
+  while (seen < 12) {
+    if (set.has(m)) {
+      const a = m; let b = m; let n = 0;
+      while (set.has(((b % 12) + 1)) && n < 11) { b = (b % 12) + 1; n++; seen++; }
+      runs.push(a === b ? MONTHS[a - 1] : `${MONTHS[a - 1]}–${MONTHS[b - 1]}`);
+      m = (b % 12) + 1; seen++;
+    } else { m = (m % 12) + 1; seen++; }
+  }
+  return runs.join(', ');
+};
+export const MONTH_NAMES = MONTHS;
+
 export const fmtRange = (a: string, b: string) => `${fmtDate(a)} – ${fmtDate(b)}`;
 export const fmtTime = (t: string | null | undefined) => (t ? t.slice(0, 5) : '');
 

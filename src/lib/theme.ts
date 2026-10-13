@@ -55,10 +55,26 @@ export const categoryArt: Record<string, { emoji: string; colors: [string, strin
   weekend: { emoji: '🧳', colors: ['#0EA5E9', '#1E3A8A'] },
   budget: { emoji: '💰', colors: ['#14B8A6', '#115E59'] },
   luxury: { emoji: '✨', colors: ['#A78BFA', '#1E1B4B'] },
+  nature: { emoji: '🌿', colors: ['#22C55E', '#14532D'] },
+  culture: { emoji: '🎭', colors: ['#F97316', '#7C2D12'] },
+  food: { emoji: '🍛', colors: ['#EAB308', '#854D0E'] },
+  wellness: { emoji: '🧘', colors: ['#2DD4BF', '#134E4A'] },
+  islands: { emoji: '🏝️', colors: ['#22D3EE', '#0E7490'] },
+  shopping: { emoji: '🛍️', colors: ['#F472B6', '#9D174D'] },
   default: { emoji: '🧭', colors: ['#1769E0', '#0B1F3A'] },
 };
 
 export const placeEmoji: Record<string, string> = {
   spiritual: '🛕', adventure: '🧗', sightseeing: '📍', shopping: '🛍️', beach: '🏖️', heritage: '🏛️',
-  nature: '🌿', wildlife: '🐅',
+  nature: '🌿', wildlife: '🐅', museum: '🏛️', food: '🍛', culture: '🎭',
+};
+
+export const REGION_ART: Record<string, { emoji: string; colors: [string, string] }> = {
+  north: { emoji: '🏔️', colors: ['#2F80ED', '#0B1F3A'] },
+  south: { emoji: '🌴', colors: ['#16A34A', '#064E3B'] },
+  west: { emoji: '🏖️', colors: ['#06B6D4', '#1769E0'] },
+  east: { emoji: '🛕', colors: ['#FF8A3D', '#9A3412'] },
+  northeast: { emoji: '🌄', colors: ['#8B5CF6', '#3B1D8F'] },
+  central: { emoji: '🐅', colors: ['#65A30D', '#14532D'] },
+  islands: { emoji: '🏝️', colors: ['#22D3EE', '#0E7490'] },
 };

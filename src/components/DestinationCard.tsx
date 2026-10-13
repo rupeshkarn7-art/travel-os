@@ -5,7 +5,7 @@ import { HeroArt } from './HeroArt';
 import { Icon } from './ui';
 import { colors, radius, shadow, space, type } from '../lib/theme';
 import type { Destination } from '../lib/types';
-import { inrRange } from '../lib/format';
+import { inrRange, monthsLabel } from '../lib/format';
 
 export function DestinationCard({ d, width, compact }: { d: Destination; width?: number; compact?: boolean }) {
   const router = useRouter();
@@ -28,6 +28,7 @@ export function DestinationCard({ d, width, compact }: { d: Destination; width?:
           ) : null}
         </View>
         <Text style={[type.small, { color: colors.muted }]} numberOfLines={1}>{d.state}</Text>
+        {compact && monthsLabel(d.best_months) ? <Text style={[type.caption, { color: colors.primary, marginTop: 2 }]} numberOfLines={1}>Best {monthsLabel(d.best_months)}</Text> : null}
         {!compact ? <Text style={[type.caption, { color: colors.primary, marginTop: 6 }]}>{inrRange(d.budget_min, d.budget_max)} · {d.recommended_days} days</Text> : null}
       </View>
     </Pressable>

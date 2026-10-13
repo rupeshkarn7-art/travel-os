@@ -7,11 +7,17 @@ import { useDestination } from '../../hooks/data';
 import { useAuth } from '../../providers/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { colors, space, type } from '../../lib/theme';
-import { addDays, daysBetween, errMsg, fmtRange, inr, inrRange, todayISO } from '../../lib/format';
+import { addDays, daysBetween, errMsg, fmtRange, inr, inrRange, monthsLabel, todayISO } from '../../lib/format';
 import { track } from '../../lib/analytics';
 import { scheduleTripReminders } from '../../lib/notify';
 
 const TYPES = [['solo', 'Solo', '🧍'], ['couple', 'Couple', '💑'], ['family', 'Family', '👨‍👩‍👧'], ['friends', 'Friends', '🧑‍🤝‍🧑'], ['group', 'Group', '👥']];
+const PACES: [string, string, string][] = [['relaxed', 'Relaxed', '2 places a day'], ['moderate', 'Moderate', '3 places a day'], ['packed', 'Packed', '4 places a day']];
+const STYLES: [string, string][] = [['budget', 'Budget'], ['standard', 'Standard'], ['premium', 'Premium']];
+const INTERESTS: [string, string][] = [['heritage', 'History & heritage'], ['spiritual', 'Temples & spiritual'], ['nature', 'Nature'], ['wildlife', 'Wildlife'],
+  ['adventure', 'Adventure'], ['beach', 'Beaches'], ['museum', 'Museums'], ['culture', 'Culture'], ['food', 'Food'], ['shopping', 'Shopping']];
+const STAYS: [string, string][] = [['hostel', 'Hostel / budget'], ['hotel', 'Hotel'], ['homestay', 'Homestay'], ['resort', 'Resort'], ['heritage', 'Heritage stay'], ['any', 'No preference']];
+const DIETS: [string, string][] = [['none', 'No restriction'], ['vegetarian', 'Vegetarian'], ['vegan', 'Vegan'], ['jain', 'Jain'], ['halal', 'Halal'], ['other', 'Other']];
 const MODES = [['any', 'Not decided'], ['flight', 'Flight'], ['train', 'Train'], ['road', 'Road / self-drive'], ['bus', 'Bus']];
 
 export default function CreateTrip() {
@@ -26,7 +32,15 @@ export default function CreateTrip() {
   const [step, setStep] = useState(0);
   const [start, setStart] = useState<string | null>(null);
   const [end, setEnd] = useState<string | null>(null);
-  const [travellers, setTravellers] = useState(2);
+  const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
+  const travellers = adults + children;
+  const [pace, setPace] = useState('moderate');
+  const [style, setStyle] = useState<string>(profile?.budget_preference && ['budget', 'standard', 'premium'].includes(profile.budget_preference) ? profile.budget_preference : 'standard');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [stay, setStay] = useState('any');
+  const [diet, setDiet] = useState('none');
+  const [access, setAccess] = useState('');
   const [ttype, setTtype] = useState<string>(profile?.traveller_type ?? 'couple');
   const [budget, setBudget] = useState('');
   const [mode, setMode] = useState('any');
@@ -72,6 +86,11 @@ export default function CreateTrip() {
         p_budget: budgetNum, p_travel_mode: mode, p_origin: origin || null,
       });
       if (error) throw error;
+      await supabase.from('trips').update({
+        adults, children, pace, travel_style: style, interests, accommodation_pref: stay,
+        dietary: diet === 'none' ? null : diet, accessibility_needs: access.trim() || null,
+      }).eq('id', tripId);
+      await supabase.rpc('add_catalogue_checklist', { p_trip_id: tripId });
       track('trip_created', { destination: d.name, days, travellers });
       track('budget_created', { total: budgetNum });
       if (gen) {
@@ -88,7 +107,7 @@ export default function CreateTrip() {
     } finally { setBusy(false); }
   };
 
-  const steps = ['Dates', 'Travellers', 'Budget', 'Review'];
+  const steps = ['Dates', 'Travellers', 'Budget', 'Preferences', 'Review'];
   return (
     <Screen keyboard>
       <Header title={`Plan ${d.name}`} subtitle={`Step ${step + 1} of ${steps.length} · ${steps[step]}`} onBack={() => (step > 0 ? setStep(step - 1) : router.back())} />
@@ -100,14 +119,16 @@ export default function CreateTrip() {
             <DateField label="Start date" value={start} min={todayISO()} error={errs.start}
               onChange={(v) => { setStart(v); if (!end || end < v) setEnd(addDays(v, Math.max(d.recommended_days - 1, 0))); }} />
             <DateField label="End date" value={end} min={start ?? todayISO()} error={errs.end} onChange={setEnd} />
-            {days > 0 ? <Card style={{ backgroundColor: colors.primaryTint, borderColor: colors.primaryTint }}><Text style={[type.title, { color: colors.primary }]}>{days} day{days > 1 ? 's' : ''}{days > 1 ? ` · ${days - 1} night${days > 2 ? 's' : ''}` : ''}</Text><Text style={[type.small, { color: colors.primaryDark }]}>Suggested for {d.name}: {d.recommended_days} days. Best time: {d.best_time}</Text></Card> : null}
+            {days > 0 ? <Card style={{ backgroundColor: colors.primaryTint, borderColor: colors.primaryTint }}><Text style={[type.title, { color: colors.primary }]}>{days} day{days > 1 ? 's' : ''}{days > 1 ? ` · ${days - 1} night${days > 2 ? 's' : ''}` : ''}</Text><Text style={[type.small, { color: colors.primaryDark }]}>Suggested for {d.name}: {d.recommended_days} days. Best time: {monthsLabel(d.best_months) ?? d.best_time ?? '—'}{start && d.best_months?.length && !d.best_months.includes(Number(start.slice(5, 7))) ? ' — your dates fall outside the usual best season; check weather and closures.' : ''}</Text></Card> : null}
           </>
         )}
         {step === 1 && (
           <>
             <Text style={[type.h2, { color: colors.text, marginBottom: space.lg }]}>Who's travelling?</Text>
-            <Text style={[type.small, { color: colors.text, fontWeight: '600', marginBottom: 8 }]}>Number of travellers</Text>
-            <Stepper value={travellers} onChange={setTravellers} label="travellers" />
+            <View style={{ flexDirection: 'row', gap: space.xl, flexWrap: 'wrap' }}>
+              <View><Text style={[type.small, { color: colors.text, fontWeight: '600', marginBottom: 8 }]}>Adults</Text><Stepper value={adults} onChange={setAdults} min={1} max={40} label="adults" /></View>
+              <View><Text style={[type.small, { color: colors.text, fontWeight: '600', marginBottom: 8 }]}>Children</Text><Stepper value={children} onChange={setChildren} min={0} max={20} label="children" /></View>
+            </View>
             <Text style={[type.small, { color: colors.text, fontWeight: '600', marginTop: space.xl, marginBottom: 10 }]}>Traveller type</Text>
             {TYPES.map(([k, l, e]) => <OptionCard key={k} label={l} emoji={e} selected={ttype === k} onPress={() => setTtype(k)} />)}
           </>
@@ -126,12 +147,33 @@ export default function CreateTrip() {
         )}
         {step === 3 && (
           <>
+            <Text style={[type.h2, { color: colors.text, marginBottom: space.lg }]}>How do you like to travel?</Text>
+            <Text style={[type.small, { color: colors.text, fontWeight: '600', marginBottom: 8 }]}>Pace</Text>
+            {PACES.map(([k, l, sub]) => <OptionCard key={k} label={l} sub={sub} selected={pace === k} onPress={() => setPace(k)} />)}
+            <Text style={[type.small, { color: colors.text, fontWeight: '600', marginTop: space.md, marginBottom: 8 }]}>Travel style</Text>
+            <ChipRow>{STYLES.map(([k, l]) => <Chip key={k} label={l} selected={style === k} onPress={() => setStyle(k)} />)}</ChipRow>
+            <Text style={[type.small, { color: colors.text, fontWeight: '600', marginTop: space.lg, marginBottom: 8 }]}>Interests (pick any)</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {INTERESTS.map(([k, l]) => <Chip key={k} label={l} selected={interests.includes(k)} onPress={() => setInterests((p) => (p.includes(k) ? p.filter((x) => x !== k) : [...p, k]))} />)}
+            </View>
+            <Text style={[type.small, { color: colors.text, fontWeight: '600', marginTop: space.lg, marginBottom: 8 }]}>Where would you like to stay?</Text>
+            <ChipRow>{STAYS.map(([k, l]) => <Chip key={k} label={l} selected={stay === k} onPress={() => setStay(k)} />)}</ChipRow>
+            <Text style={[type.small, { color: colors.text, fontWeight: '600', marginTop: space.lg, marginBottom: 8 }]}>Food preference</Text>
+            <ChipRow>{DIETS.map(([k, l]) => <Chip key={k} label={l} selected={diet === k} onPress={() => setDiet(k)} />)}</ChipRow>
+            <View style={{ height: space.lg }} />
+            <Field label="Accessibility needs (optional)" value={access} onChangeText={setAccess} placeholder="e.g. wheelchair user, avoid long walks or stairs" />
+          </>
+        )}
+        {step === 4 && (
+          <>
             <Text style={[type.h2, { color: colors.text, marginBottom: space.lg }]}>Review your trip</Text>
             <Card>
               {[
                 ['Destination', `${d.name}, ${d.state}`],
                 ['Dates', start && end ? `${fmtRange(start, end)} (${days} days)` : '—'],
-                ['Travellers', `${travellers} · ${ttype}`],
+                ['Travellers', `${adults} adult${adults > 1 ? 's' : ''}${children ? ` + ${children} child${children > 1 ? 'ren' : ''}` : ''} · ${ttype}`],
+                ['Pace & style', `${PACES.find((p) => p[0] === pace)?.[1]} · ${STYLES.find((p) => p[0] === style)?.[1]}`],
+                ['Interests', interests.length ? interests.map((i) => INTERESTS.find((x) => x[0] === i)?.[1]).join(', ') : 'Anything'],
                 ['Budget', inr(budgetNum)],
                 ['Travel', MODES.find((m) => m[0] === mode)?.[1] + (origin ? ` from ${origin}` : '')],
               ].map(([k, v]) => (
@@ -141,13 +183,13 @@ export default function CreateTrip() {
                 </View>
               ))}
             </Card>
-            <OptionCard label="Build a suggested itinerary" sub="Day-wise plan from top-rated places. You can edit everything." selected={gen} onPress={() => setGen(!gen)} />
-            <Text style={[type.caption, { color: colors.muted }]}>We'll also create a budget split and a preparation checklist including this destination's documents and permits.</Text>
+            <OptionCard label="Build a suggested itinerary" sub="Day-wise plan in geographic order, matched to your pace and interests. You can edit everything." selected={gen} onPress={() => setGen(!gen)} />
+            <Text style={[type.caption, { color: colors.muted }]}>We'll also create a budget split and a preparation checklist, including any state-wide permits (such as an Inner Line Permit) for this destination. Opening hours and travel times are flagged where they aren't verified.</Text>
           </>
         )}
       </View>
       <View style={{ marginTop: space.xl }}>
-        {step < 3 ? <Button title="Continue" onPress={next} /> : <Button title="Create Trip" icon="check" onPress={create} loading={busy} />}
+        {step < 4 ? <Button title="Continue" onPress={next} /> : <Button title="Create Trip" icon="check" onPress={create} loading={busy} />}
       </View>
     </Screen>
   );

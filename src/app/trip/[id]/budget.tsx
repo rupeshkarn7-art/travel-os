@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Chip, ChipRow, DateField, EmptyState, ErrorState, Field, Header, IconButton, Loading, ProgressBar, Screen, Section, Sheet, Stat, confirmAction, useToast } from '../../../components/ui';
 import { useBudget, useTrip } from '../../../hooks/data';
@@ -14,6 +14,7 @@ const CATS = ['Transportation', 'Accommodation', 'Food', 'Activities', 'Local tr
 export default function Budget() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const toast = useToast();
+  const router = useRouter();
   const qc = useQueryClient();
   const trip = useTrip(id);
   const q = useBudget(id);
@@ -77,6 +78,7 @@ export default function Budget() {
         <View style={{ marginTop: 12 }}><ProgressBar value={t.budget ? Math.min(spent / t.budget, 1) : 0} color={spent > t.budget ? colors.error : colors.primary} height={10} /></View>
         {Math.abs(estimated - t.budget) > 1 ? <Text style={[type.caption, { color: colors.warning, marginTop: 8 }]}>Category estimates total {inr(estimated)}, which differs from your trip budget.</Text> : null}
       </Card>
+      <Button title="Recalculate with budget calculator" icon="calculate" variant="secondary" small onPress={() => router.push(`/budget-calculator?trip=${id}`)} style={{ marginTop: space.md, alignSelf: 'flex-start' }} />
 
       <Section title="Categories">
         <View style={{ gap: 10 }}>
