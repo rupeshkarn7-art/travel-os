@@ -4,13 +4,12 @@ import { useLocalSearchParams } from 'expo-router';
 import { Header, Screen } from '../../components/ui';
 import { colors, space, type } from '../../lib/theme';
 
-const CONTACT = process.env.EXPO_PUBLIC_SUPPORT_EMAIL || 'support@example.com';
+const CONTACT = process.env.EXPO_PUBLIC_SUPPORT_EMAIL || 'rupeshkarn7@gmail.com';
 
 const DOCS: Record<string, { title: string; sections: [string, string][] }> = {
   privacy: {
     title: 'Privacy policy',
     sections: [
-      ['Template notice', 'This is a starting template. Have it reviewed by a qualified professional and replace the contact details before publishing the app.'],
       ['What we collect', 'Account details (name, email, optional phone and photo), your travel preferences, trips, itineraries, budgets, expenses, checklists and saved places, and basic usage events that help us improve the app.'],
       ['How we use it', 'To provide the app, personalise destination suggestions, send trip reminders you enable, and keep the service secure. We do not sell personal data.'],
       ['Where it is stored', 'Data is stored with our backend provider (Supabase) and protected by per-user access rules, so only you can see your trips.'],
@@ -22,7 +21,6 @@ const DOCS: Record<string, { title: string; sections: [string, string][] }> = {
   terms: {
     title: 'Terms of use',
     sections: [
-      ['Template notice', 'This is a starting template. Have it reviewed by a qualified professional before publishing the app.'],
       ['Planning aid only', 'Travel OS provides informational guidance. Permit rules, prices, opening hours and safety conditions change; always confirm with official sources. Information is not a guarantee of safety, availability or eligibility.'],
       ['No bookings', 'The app does not sell or book travel services. Third-party links and map directions are provided for convenience.'],
       ['Content labels', 'Content is labelled Official, Verified, Community or AI-generated. Items marked “needs review” have not been independently verified.'],
