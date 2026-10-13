@@ -14,14 +14,17 @@
 
 | Area | What it does |
 |---|---|
-| **Explore** | Browse popular destinations, attractions and travel inspiration; search with recent-search history |
+| **India catalogue** | 263 destinations and 300+ attractions across all 28 states and 8 union territories, organised by region → state/UT → destination ([details](data/india/README.md)) |
+| **Explore** | Browse by region and state, filter by category, month, trip length, budget level and type; server-side paginated search across names, alternate spellings, states and attractions |
+| **Discover** | Travel circuits, "near me" (straight-line distance), compare up to three destinations, share links, nearby destinations |
 | **Travel readiness** | Documents, permits, local rules and safety information for each destination, always shown with a source and a last-verified date |
-| **Trip builder** | Set dates, travellers and budget, then generate a day-wise itinerary and edit activities |
-| **Budget** | Per-trip budget categories and expense tracking |
+| **Trip builder** | Dates, adults/children, budget, pace, travel style, interests, stay, food and accessibility preferences; day-wise itinerary in geographic order that respects known closures |
+| **AI planner** | Anthropic Claude, grounded in the catalogue (may only use known places), validated server-side; regenerate a single day |
+| **Budget** | Budget calculator (budget/standard/premium, per person and total, editable lines, documented assumptions), per-trip categories and expenses |
 | **Checklist** | Preparation and packing tasks with priorities |
 | **Maps** | Destination and trip maps (Leaflet + OpenStreetMap, no API key); directions open in the device's map app |
 | **Account** | Email/password sign-up with email verification (resend link, expired-link handling), password reset, profile, preferences, saved items and notifications |
-| **Admin console** | Manage destinations and travel requirements, and review user reports |
+| **Admin console** | Manage destinations and requirements, review reports, and a data-quality audit (coverage, stale permits, duplicates, missing fields) |
 
 ## Tech stack
 
@@ -92,6 +95,19 @@ Use the `production` profile to build an app bundle for the Google Play Store.
 **Email verification.** In Supabase → Authentication → Sign In / Providers → Email, turn on **Confirm email**. New users then land on a *Verify your email* screen and can only sign in after opening the link. Supabase's built-in mailer is for testing only, so configure custom SMTP (Authentication → Emails → SMTP Settings) before launch.
 
 **Auth redirects.** In Supabase → Authentication → URL Configuration, add each web address the app runs on (e.g. `https://your-domain/travel-os/**`) and `travelos://**` for the native app. This makes sign-up confirmation and password-reset links return to the app.
+
+### Environment and secrets
+
+| Where | Name | Purpose |
+|---|---|---|
+| App (`.env`) | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY` | Supabase project and publishable key |
+| Supabase → Edge Functions → Secrets | `ANTHROPIC_API_KEY` | Enables the AI planner (server-side only, never in the app) |
+| Supabase → Edge Functions → Secrets | `ANTHROPIC_MODEL` (optional) | Defaults to `claude-sonnet-5-5` |
+
+### Database
+
+Migrations live in `supabase/migrations` (005 catalogue schema, 006 importer/search/planner functions). The catalogue is
+imported from `data/india/out/catalogue.json` — see [data/india/README.md](data/india/README.md).
 
 ## Security
 
