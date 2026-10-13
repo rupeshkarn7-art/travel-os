@@ -2,7 +2,7 @@
 
 **Plan your entire trip in one place.** Travel OS is a cross-platform travel planning app that brings destination discovery, entry requirements, itineraries, budgets and checklists together. It runs on Android, iOS and the web from a single codebase.
 
-**[▶ Open the live web app](https://rupesh-kumar-website.vercel.app/travel-os)** · [Project write-up](https://rupesh-kumar-website.vercel.app/projects/travel-os)
+**[▶ Open the live web app](https://rupeshkumar7.com/travel-os)** · [Project write-up](https://rupeshkumar7.com/projects/travel-os)
 
 <p align="center">
   <img src="docs/screenshots/welcome.png" alt="Travel OS welcome screen" width="300" />
@@ -108,7 +108,7 @@ Use the `production` profile to build an app bundle for the Google Play Store.
 
 ## Author
 
-**Rupesh Kumar** · [Website](https://rupesh-kumar-website.vercel.app) · [GitHub](https://github.com/rupeshkarn7-art)
+**Rupesh Kumar** · [Website](https://rupeshkumar7.com) · [GitHub](https://github.com/rupeshkarn7-art)
 
 ## License
 
