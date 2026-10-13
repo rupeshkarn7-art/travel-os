@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FlatList, Text, View, useWindowDimensions, StyleSheet } from 'react-native';
+import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Pressable, Text, View, useWindowDimensions, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,12 +14,18 @@ const slides = [
 
 export default function Welcome() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  // Shrink the picture on short phones so the slide text never runs under the buttons.
+  const heroH = Math.max(130, Math.min(280, height - 450));
   const w = Math.min(width, 520);
   const [i, setI] = useState(0);
   const ref = useRef<FlatList>(null);
-  const last = i === slides.length - 1;
-  const next = () => (last ? router.push('/register') : ref.current?.scrollToIndex({ index: i + 1, animated: true }));
+  const goTo = (k: number) => { setI(k); ref.current?.scrollToIndex({ index: k, animated: true }); };
+  // Track the visible slide from scroll position (momentum events don't fire on the web).
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const k = Math.round(e.nativeEvent.contentOffset.x / w);
+    if (k !== i && k >= 0 && k < slides.length) setI(k);
+  };
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center' }}>
       <View style={{ width: w, flex: 1 }}>
@@ -30,14 +36,15 @@ export default function Welcome() {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           keyExtractor={(s) => s.title}
-          onMomentumScrollEnd={(e) => setI(Math.round(e.nativeEvent.contentOffset.x / w))}
+          onScroll={onScroll}
+          scrollEventThrottle={32}
           getItemLayout={(_, index) => ({ length: w, offset: w * index, index })}
           renderItem={({ item }) => (
             <View style={{ width: w, padding: space.lg }}>
-              <LinearGradient colors={item.grad} style={styles.hero}>
-                <Text style={{ fontSize: 96 }}>{item.emoji}</Text>
+              <LinearGradient colors={item.grad} style={[styles.hero, { height: heroH }]}>
+                <Text style={{ fontSize: heroH < 200 ? 64 : 96 }}>{item.emoji}</Text>
               </LinearGradient>
-              <Text style={[type.h1, { color: colors.text, marginTop: space.xl }]}>{item.title}</Text>
+              <Text style={[heroH < 200 ? type.h2 : type.h1, { color: colors.text, marginTop: heroH < 200 ? space.lg : space.xl }]}>{item.title}</Text>
               <Text style={[type.body, { color: colors.muted, marginTop: space.sm }]}>{item.text}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: space.lg }}>
                 {item.points.map((p: string) => (
@@ -49,11 +56,16 @@ export default function Welcome() {
         />
         <View style={{ paddingHorizontal: space.lg, paddingBottom: space.lg }}>
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: space.lg }}>
-            {slides.map((_, k) => <View key={k} style={{ width: k === i ? 24 : 8, height: 8, borderRadius: 4, backgroundColor: k === i ? colors.primary : colors.border }} />)}
+            {slides.map((_, k) => (
+              <Pressable key={k} onPress={() => goTo(k)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Show slide ${k + 1} of ${slides.length}`}
+                accessibilityState={{ selected: k === i }}>
+                <View style={{ width: k === i ? 24 : 8, height: 8, borderRadius: 4, backgroundColor: k === i ? colors.primary : colors.faint }} />
+              </Pressable>
+            ))}
           </View>
-          <Button title={last ? 'Personalise My Travel' : i === 0 ? 'Get Started' : 'Continue'} onPress={next} />
+          <Button title="Create an account" icon="person-add" onPress={() => router.push('/register')} />
           <View style={{ height: 10 }} />
-          <Button title="I already have an account" variant="ghost" onPress={() => router.push('/login')} />
+          <Button title="I already have an account" variant="secondary" onPress={() => router.push('/login')} />
         </View>
       </View>
     </SafeAreaView>
