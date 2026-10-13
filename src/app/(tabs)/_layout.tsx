@@ -1,6 +1,5 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, IconName } from '../../components/ui';
 import { colors } from '../../lib/theme';
@@ -15,11 +14,17 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        // Always show the label under the icon (never beside it, never hidden).
+        tabBarLabelPosition: 'below-icon',
+        // flexShrink: 0 stops the label being squashed under the icon on small/web layouts.
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600', lineHeight: 16, flexShrink: 0 },
+        tabBarItemStyle: { paddingVertical: 2 },
         tabBarStyle: {
-          height: 56 + Math.max(insets.bottom, Platform.OS === 'web' ? 0 : 8),
-          paddingBottom: Math.max(insets.bottom, 8), paddingTop: 6,
-          backgroundColor: colors.surface, borderTopColor: colors.border,
+          // Room for a 24px icon + one line of label + padding, plus the phone's home-indicator area.
+          height: 64 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: 8 + insets.bottom,
+          backgroundColor: colors.surface, borderTopColor: colors.border, borderTopWidth: 1,
         },
       }}
     >
