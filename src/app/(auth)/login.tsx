@@ -8,7 +8,7 @@ import { isEmail } from '../../lib/format';
 
 export function friendlyAuthError(msg: string) {
   if (/invalid login credentials/i.test(msg)) return 'Incorrect email or password.';
-  if (/email not confirmed/i.test(msg)) return 'Please confirm your email first — check your inbox for the link.';
+  if (/email not confirmed/i.test(msg)) return 'Please verify your email first — open the link we sent to your inbox.';
   if (/already registered|already been registered/i.test(msg)) return 'An account with this email already exists. Try logging in.';
   if (/rate limit|too many/i.test(msg)) return 'Too many attempts. Please wait a few minutes and try again.';
   if (/Failed to fetch|network/i.test(msg)) return 'No internet connection. Please try again.';
@@ -25,18 +25,22 @@ export default function Login() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errs, setErrs] = useState<{ email?: string; password?: string; form?: string }>({});
+  const [unverified, setUnverified] = useState(false);
 
   const submit = async () => {
     const e: typeof errs = {};
     if (!isEmail(email)) e.email = 'Enter a valid email address.';
     if (!password) e.password = 'Enter your password.';
     setErrs(e);
+    setUnverified(false);
     if (Object.keys(e).length) return;
     setBusy(true);
     try {
       await signIn(email, password);
     } catch (err: any) {
-      setErrs({ form: friendlyAuthError(err.message ?? 'Could not sign in.') });
+      const msg: string = err.message ?? 'Could not sign in.';
+      if (/email not confirmed/i.test(msg)) setUnverified(true);
+      setErrs({ form: friendlyAuthError(msg) });
     } finally { setBusy(false); }
   };
 
@@ -53,6 +57,10 @@ export default function Login() {
       />
       <Link href="/forgot" style={[type.small, { color: colors.primary, fontWeight: '600', alignSelf: 'flex-end', marginTop: -8, marginBottom: space.lg }]}>Forgot password?</Link>
       {errs.form ? <Text style={[type.small, { color: colors.error, marginBottom: space.md }]} accessibilityLiveRegion="polite">{errs.form}</Text> : null}
+      {unverified ? (
+        <Button title="Resend verification email" icon="mark-email-unread" variant="secondary" style={{ marginBottom: space.md }}
+          onPress={() => router.push({ pathname: '/verify-email', params: { email: email.trim().toLowerCase(), resend: '1' } })} />
+      ) : null}
       <Button title="Login" onPress={submit} loading={busy} />
       {process.env.EXPO_PUBLIC_ENABLE_GOOGLE === 'true' ? (
         <>

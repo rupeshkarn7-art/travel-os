@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { Button, EmptyState, Field, Header, Icon, Screen } from '../../components/ui';
+import { Button, Field, Header, Icon, Screen } from '../../components/ui';
 import { useAuth } from '../../providers/AuthProvider';
 import { colors, space, type } from '../../lib/theme';
 import { isEmail } from '../../lib/format';
@@ -14,7 +14,6 @@ export default function Register() {
   const [terms, setTerms] = useState(false);
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
   const [errs, setErrs] = useState<Record<string, string>>({});
   const set = (k: keyof typeof v) => (t: string) => setV((p) => ({ ...p, [k]: t }));
 
@@ -31,26 +30,18 @@ export default function Register() {
     setBusy(true);
     try {
       const r = await signUp(v.name, v.email, v.phone, v.password);
-      if (r.needsConfirmation) setSent(true);
+      if (r.needsConfirmation) router.replace({ pathname: '/verify-email', params: { email: v.email.trim().toLowerCase() } });
     } catch (err: any) {
       setErrs({ form: friendlyAuthError(err.message ?? 'Could not create account.') });
     } finally { setBusy(false); }
   };
-
-  if (sent) {
-    return (
-      <Screen scroll={false}>
-        <EmptyState icon="mark-email-read" title="Check your inbox" text={`We sent a confirmation link to ${v.email.trim()}. Open it, then come back and log in.`} action="Go to login" onAction={() => router.replace('/login')} />
-      </Screen>
-    );
-  }
 
   return (
     <Screen keyboard>
       <Header onBack={() => (router.canGoBack() ? router.back() : router.replace('/welcome'))} />
       <Text style={[type.h1, { color: colors.text, marginBottom: space.xl }]}>Create your account</Text>
       <Field label="Full name" value={v.name} onChangeText={set('name')} autoComplete="name" textContentType="name" error={errs.name} placeholder="Rupesh Karn" />
-      <Field label="Email" value={v.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" autoComplete="email" textContentType="emailAddress" error={errs.email} placeholder="you@example.com" />
+      <Field label="Email" value={v.email} onChangeText={set('email')} autoCapitalize="none" keyboardType="email-address" autoComplete="email" textContentType="emailAddress" error={errs.email} placeholder="you@example.com" hint="We'll send a link to verify this address." />
       <Field label="Mobile number (optional)" value={v.phone} onChangeText={set('phone')} keyboardType="phone-pad" autoComplete="tel" error={errs.phone} placeholder="+91 98765 43210" />
       <Field
         label="Password" value={v.password} onChangeText={set('password')} secureTextEntry={!show} autoCapitalize="none" textContentType="newPassword" error={errs.password}

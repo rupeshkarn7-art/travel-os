@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
-import { ToastProvider } from '../components/ui';
+import { ToastProvider, useToast } from '../components/ui';
 import { colors, type } from '../lib/theme';
 import { track } from '../lib/analytics';
 
@@ -27,7 +27,8 @@ function Splash() {
 }
 
 function Gate() {
-  const { session, profile, loading: authLoading, recovery } = useAuth();
+  const { session, profile, loading: authLoading, recovery, authNotice, clearAuthNotice } = useAuth();
+  const toast = useToast();
   // Preload the icon font so icon-only buttons never render blank (notably on the web).
   const [fontsLoaded, fontError] = useFonts(MaterialIcons.font);
   const loading = authLoading || (!fontsLoaded && !fontError);
@@ -52,6 +53,14 @@ function Gate() {
   }, [session, profile, loading, recovery, segments, router]);
 
   useEffect(() => { if (session) track('app_open', { platform: Platform.OS }); }, [session?.user.id]);
+
+  // Result of opening an email verification link (success, or expired/invalid link).
+  useEffect(() => {
+    if (loading || !authNotice) return;
+    toast(authNotice.message, authNotice.tone);
+    if (authNotice.tone === 'success') track('email_verified');
+    clearAuthNotice();
+  }, [loading, authNotice, toast, clearAuthNotice]);
 
   return (
     <>

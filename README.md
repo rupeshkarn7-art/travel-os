@@ -20,7 +20,7 @@
 | **Budget** | Per-trip budget categories and expense tracking |
 | **Checklist** | Preparation and packing tasks with priorities |
 | **Maps** | Destination and trip maps (Leaflet + OpenStreetMap, no API key); directions open in the device's map app |
-| **Account** | Email/password sign-up, password reset, profile, preferences, saved items and notifications |
+| **Account** | Email/password sign-up with email verification (resend link, expired-link handling), password reset, profile, preferences, saved items and notifications |
 | **Admin console** | Manage destinations and travel requirements, and review user reports |
 
 ## Tech stack
@@ -88,6 +88,8 @@ npx eas-cli@latest build -p android --profile preview
 Use the `production` profile to build an app bundle for the Google Play Store.
 
 **iOS.** Requires an Apple Developer account. Build with `npx eas-cli@latest build -p ios`, then distribute through TestFlight or the App Store.
+
+**Email verification.** In Supabase → Authentication → Sign In / Providers → Email, turn on **Confirm email**. New users then land on a *Verify your email* screen and can only sign in after opening the link. Supabase's built-in mailer is for testing only, so configure custom SMTP (Authentication → Emails → SMTP Settings) before launch.
 
 **Auth redirects.** In Supabase → Authentication → URL Configuration, add each web address the app runs on (e.g. `https://your-domain/travel-os/**`) and `travelos://**` for the native app. This makes sign-up confirmation and password-reset links return to the app.
 

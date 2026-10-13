@@ -23,6 +23,10 @@ interface AuthCtx {
   updatePassword: (password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   clearRecovery: () => void;
+  resendVerification: (email: string) => Promise<void>;
+  /** Set after the user opens a sign-up verification link (or an expired/invalid one). */
+  authNotice: { tone: 'success' | 'error'; message: string } | null;
+  clearAuthNotice: () => void;
 }
 
 const Ctx = createContext<AuthCtx>(null as unknown as AuthCtx);
@@ -34,7 +38,36 @@ const webBaseUrl = () => {
   const base = (Constants.expoConfig?.experiments as { baseUrl?: string } | undefined)?.baseUrl ?? '';
   return `${window.location.origin}${base.replace(/\/$/, '')}`;
 };
-const redirectUrl = () => (Platform.OS === 'web' ? webBaseUrl() : Linking.createURL('reset-password'));
+// Auth email links end in "/" so they match a Supabase redirect allow-list entry like https://site/travel-os/**
+const webAuthReturnUrl = () => `${webBaseUrl()}/`;
+const redirectUrl = () => (Platform.OS === 'web' ? webAuthReturnUrl() : Linking.createURL('reset-password'));
+// Where the "verify your email" link should land: the app home (handled by handleUrl / detectSessionInUrl).
+const verifyRedirectUrl = () => (Platform.OS === 'web' ? webAuthReturnUrl() : Linking.createURL('/'));
+
+/** Reads Supabase auth parameters from a link's #fragment or ?query. */
+function authParams(url: string) {
+  const out = new URLSearchParams();
+  const [beforeHash, hash = ''] = url.split('#');
+  const query = beforeHash.split('?')[1] ?? '';
+  new URLSearchParams(query).forEach((v, k) => out.set(k, v));
+  new URLSearchParams(hash).forEach((v, k) => out.set(k, v));
+  return out;
+}
+
+function noticeFromLink(q: URLSearchParams): { tone: 'success' | 'error'; message: string } | null {
+  const err = q.get('error_code') || q.get('error');
+  if (err) {
+    return {
+      tone: 'error',
+      message: /expired/i.test(err + (q.get('error_description') ?? ''))
+        ? 'That verification link has expired. Log in to get a new one.'
+        : 'That link is no longer valid. Log in to get a new one.',
+    };
+  }
+  const t = q.get('type');
+  if (t === 'signup' || t === 'email' || t === 'email_change') return { tone: 'success', message: 'Email verified — welcome to Travel OS!' };
+  return null;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
@@ -43,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [recovery, setRecovery] = useState(false);
+  const [authNotice, setAuthNotice] = useState<AuthCtx['authNotice']>(() =>
+    Platform.OS === 'web' && typeof window !== 'undefined' ? noticeFromLink(authParams(window.location.href)) : null);
 
   const loadProfile = useCallback(async (uid: string | undefined) => {
     if (!uid) { setProfile(null); setIsAdmin(false); return; }
@@ -82,18 +117,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (Platform.OS !== 'web') supabase.auth.startAutoRefresh();
 
-    // Password-reset deep link on native: travelos://reset-password#access_token=...&refresh_token=...&type=recovery
+    // Auth deep links on native (on the web, supabase-js reads the URL itself):
+    //   travelos://reset-password#access_token=…&refresh_token=…&type=recovery  → password reset
+    //   travelos://#access_token=…&refresh_token=…&type=signup                  → email verified, signed in
     const handleUrl = async (url: string | null) => {
       if (!url || Platform.OS === 'web') return;
-      const frag = url.split('#')[1];
-      if (!frag) return;
-      const q = new URLSearchParams(frag);
+      const q = authParams(url);
+      const notice = noticeFromLink(q);
       const at = q.get('access_token');
       const rt = q.get('refresh_token');
-      if (at && rt && q.get('type') === 'recovery') {
+      if (at && rt) {
         const { error } = await supabase.auth.setSession({ access_token: at, refresh_token: rt });
-        if (!error) setRecovery(true);
+        if (error) { setAuthNotice({ tone: 'error', message: 'That link is no longer valid. Log in to get a new one.' }); return; }
+        if (q.get('type') === 'recovery') { setRecovery(true); return; }
       }
+      if (notice) setAuthNotice(notice);
     };
     Linking.getInitialURL().then(handleUrl).catch(() => {});
     const linkSub = Linking.addEventListener('url', (e) => handleUrl(e.url));
@@ -105,6 +143,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session, user: session?.user ?? null, profile, isAdmin, loading, recovery,
     refreshProfile: () => loadProfile(session?.user.id),
     clearRecovery: () => setRecovery(false),
+    authNotice,
+    clearAuthNotice: () => setAuthNotice(null),
+    resendVerification: async (email) => {
+      const { error } = await supabase.auth.resend({
+        type: 'signup', email: email.trim().toLowerCase(), options: { emailRedirectTo: verifyRedirectUrl() },
+      });
+      if (error) throw error;
+    },
     signIn: async (email, password) => {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) throw error;
@@ -112,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp: async (name, email, phone, password) => {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(), password,
-        options: { data: { full_name: name.trim(), phone: phone.trim() }, emailRedirectTo: redirectUrl() },
+        options: { data: { full_name: name.trim(), phone: phone.trim() }, emailRedirectTo: verifyRedirectUrl() },
       });
       if (error) throw error;
       if (data.user) track('signup_completed');
@@ -129,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     signInWithGoogle: async () => {
       const WebBrowser = await import('expo-web-browser');
-      const redirectTo = Platform.OS === 'web' ? webBaseUrl() : Linking.createURL('/');
+      const redirectTo = Platform.OS === 'web' ? webAuthReturnUrl() : Linking.createURL('/');
       const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: Platform.OS !== 'web' } });
       if (error) throw error;
       if (Platform.OS !== 'web' && data.url) {
@@ -142,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-  }), [session, profile, isAdmin, loading, recovery, loadProfile]);
+  }), [session, profile, isAdmin, loading, recovery, authNotice, loadProfile]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
